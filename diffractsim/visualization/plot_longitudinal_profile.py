@@ -146,5 +146,5 @@ def plot_longitudinal_profile_intensity(self,  longitudinal_profile_E, extent,  
     else:
         cb.set_label(r'Square Root Intensity $\left[ \sqrt{W / m^2 } \right]$', fontsize=13, labelpad =  14 )
 
-
     plt.show()
+
