@@ -5,9 +5,12 @@ from .diffractive_element import DOE
 
 
 class BinaryGrating(DOE):
-    def __init__(self, period, width, height, x0 = 0, y0 = 0):
+    def __init__(self, period, width, height, x0=0, y0=0, rotate90=False):
         """
-        Creates a binary (amplitude) rectangular grating at the point (x0, y0) with width width and height height
+        Creates a binary (amplitude) rectangular grating at the point (x0, y0) 
+        with width `width` and height `height`. 
+        
+        If rotate90=True, the grating pattern is rotated by 90 degrees.
         """
         global bd
         from ..util.backend_functions import backend as bd
@@ -15,20 +18,29 @@ class BinaryGrating(DOE):
         self.period = period
         self.x0 = x0
         self.y0 = y0
-
         self.width = width
         self.height = height
+        self.rotate90 = rotate90  # <--- new variable
 
     def get_transmittance(self, xx, yy, λ):
+        # Choose direction of periodic modulation
+        if self.rotate90:
+            coord = yy  # grating lines along x-axis (rotated)
+        else:
+            coord = xx  # grating lines along y-axis (default)
 
-        t = bd.sign((xx) % (self.period) - self.period/2)
-        t = bd.select([t==0, t==1, t==-1], [bd.ones_like(t), bd.ones_like(t),  bd.zeros_like(t)])
+        # Binary grating: 1 for half the period, 0 for the other half
+        t = bd.sign((coord) % self.period - self.period / 2)
+        t = bd.select([t == 0, t == 1, t == -1],
+                      [bd.ones_like(t), bd.ones_like(t), bd.zeros_like(t)])
 
-        t = t*bd.where((((xx >= (self.x0 - self.width / 2)) & (xx < (self.x0 + self.width / 2)))
-                        & ((yy >= (self.y0 - self.height / 2)) & (yy < (self.y0 + self.height / 2)))),
-                        bd.ones_like(xx), bd.zeros_like(xx))
+        # Apply aperture window
+        in_window = ((xx >= (self.x0 - self.width / 2)) & (xx < (self.x0 + self.width / 2)) &
+                     (yy >= (self.y0 - self.height / 2)) & (yy < (self.y0 + self.height / 2)))
+        t = t * bd.where(in_window, bd.ones_like(xx), bd.zeros_like(xx))
 
         return t
+
 
 
 
